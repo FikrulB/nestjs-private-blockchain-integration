@@ -28,7 +28,7 @@ export const seedUsers = async (config: ConfigService) => {
   const existingRoleAccess = await prisma.userRoleAccess.findFirst({
     where: {
       userID: user.id,
-      role: Roles.SUPERADMIN
+      role: Roles.OWNER
     }
   })
   
@@ -37,7 +37,7 @@ export const seedUsers = async (config: ConfigService) => {
     await prisma.userRoleAccess.create({
       data: {
         userID: user.id,
-        role: Roles.SUPERADMIN
+        role: Roles.OWNER
       }
     })
   }

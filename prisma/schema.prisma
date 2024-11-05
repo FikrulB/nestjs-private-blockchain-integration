@@ -110,7 +110,7 @@ model LogManagements {
 }
 
 enum Roles {
-  SUPERADMIN
+  OWNER
   ADMIN
   USER
 }
