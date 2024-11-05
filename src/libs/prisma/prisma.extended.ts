@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import { pagination } from 'prisma-extension-pagination';
+import { PrismaClient } from '@prisma/client'
+import { pagination } from 'prisma-extension-pagination'
 
 function extendClient(base: PrismaClient) {
   return base.$extends(
@@ -9,19 +9,19 @@ function extendClient(base: PrismaClient) {
         includePageCount: true, // include counters by default
       },
     }),
-  );
+  )
 }
 
 class UntypedExtendedClient extends PrismaClient {
   constructor(options?: ConstructorParameters<typeof PrismaClient>[0]) {
-    super(options);
+    super(options)
 
-    return extendClient(this) as this;
+    return extendClient(this) as this
   }
 }
 
 const ExtendedPrismaClient = UntypedExtendedClient as unknown as new (
   options?: ConstructorParameters<typeof PrismaClient>[0],
-) => ReturnType<typeof extendClient>;
+) => ReturnType<typeof extendClient>
 
-export { ExtendedPrismaClient };
+export { ExtendedPrismaClient }

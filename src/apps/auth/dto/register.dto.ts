@@ -1,22 +1,22 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger'
 import {
   IsEmail,
   IsNotEmpty,
   IsString,
   IsStrongPassword,
-} from 'class-validator';
-import { Match } from '@/apps/auth/decorators/match.decorator';
+} from 'class-validator'
+import { Match } from '@/apps/auth/decorators/match.decorator'
 
 export class RegisterDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  name: string;
+  name: string
 
   @ApiProperty()
   @IsNotEmpty()
   @IsEmail()
-  email: string;
+  email: string
 
   @ApiProperty()
   @IsNotEmpty()
@@ -26,7 +26,7 @@ export class RegisterDto {
     minNumbers: 1,
     minUppercase: 1,
   })
-  password: string;
+  password: string
 
   @ApiProperty()
   @IsNotEmpty()
@@ -37,5 +37,5 @@ export class RegisterDto {
     minUppercase: 1,
   })
   @Match('password')
-  passwordConfirm: string;
+  passwordConfirm: string
 }

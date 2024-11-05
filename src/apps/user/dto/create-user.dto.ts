@@ -1,26 +1,27 @@
 // create-user.dto.ts
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsStrongPassword,
   MinLength,
-} from 'class-validator';
-import { UserStatus, Role } from '@prisma/client';
-import { ApiProperty } from '@nestjs/swagger';
-import { Match } from '@/apps/auth/decorators/match.decorator';
+} from 'class-validator'
+import { Roles } from '@prisma/client'
+import { ApiProperty } from '@nestjs/swagger'
+import { Match } from '@/apps/auth/decorators/match.decorator'
 
 export class CreateUserDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  name: string;
+  name: string
 
   @ApiProperty()
   @IsNotEmpty()
   @IsEmail()
-  email: string;
+  email: string
 
   @ApiProperty()
   @IsNotEmpty()
@@ -32,28 +33,29 @@ export class CreateUserDto {
     minUppercase: 1,
   })
   @MinLength(6)
-  password: string;
+  password: string
 
   @ApiProperty()
   @IsNotEmpty()
   @Match('password')
-  passwordConfirm: string;
+  passwordConfirm: string
 
   @ApiProperty()
   @IsOptional()
   @IsString()
-  phone?: string;
+  phone?: string
 
   @ApiProperty()
   @IsOptional()
   @IsString()
-  address?: string;
+  address?: string
 
   @ApiProperty()
   @IsOptional()
-  status?: UserStatus;
+  @IsBoolean()
+  status?: Boolean
 
   @ApiProperty()
   @IsNotEmpty()
-  role: Role;
+  role: Roles
 }

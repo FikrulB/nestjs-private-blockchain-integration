@@ -4,7 +4,7 @@ export const ERROR_MESSAGES = {
   INVALID_CREDENTIALS: 'Invalid username or password',
   UNAUTHORIZED: 'Unauthorized',
   FORBIDDEN_ACCESS: "You don't have access to this module!",
-};
+}
 
 export const ERROR_CODES = {
   USERNAME_EXISTS: 'USERNAME_EXISTS',
@@ -16,4 +16,4 @@ export const ERROR_CODES = {
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
   DATA_NOT_FOUND: 'DATA_NOT_FOUND',
   FORBIDDEN_ACCESS: 'FORBIDDEN_ACCESS',
-};
+}
