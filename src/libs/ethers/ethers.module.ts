@@ -1,5 +1,5 @@
 import { Global, Module } from "@nestjs/common"
-import { EthersService } from "./ethers.service"
+import { EthersService } from "@/libs/ethers/ethers.service"
 
 @Global()
 @Module({

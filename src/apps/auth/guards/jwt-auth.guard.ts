@@ -16,10 +16,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
     const authHeader = request.headers['authorization'];
     
     const token = authHeader && authHeader.split(' ')[1];
-    if (!token) throw new CustomException(
-      ERROR_MESSAGES.UNAUTHORIZED,
-      HttpStatus.UNAUTHORIZED
-    )
+    if (!token) return false
 
     const sessionToken = await this.prismaService.sessionTokens.findUnique({
       where: { accessToken: token },
@@ -30,6 +27,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
       ERROR_MESSAGES.UNAUTHORIZED,
       HttpStatus.UNAUTHORIZED
     )
+
+    const isValid = await super.canActivate(context);
+    if (!isValid) return false
     
     return true
   }

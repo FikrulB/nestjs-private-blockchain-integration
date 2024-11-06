@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcryptjs'
 import * as moment from 'moment';
-import { HttpStatus, Injectable } from '@nestjs/common'
+import { forwardRef, HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { JwtService, JwtSignOptions } from '@nestjs/jwt'
 import { PrismaService } from '@/libs/prisma/prisma.service'
 import { CustomException } from '@/common/exceptions/custom.exceptions'
@@ -9,6 +9,8 @@ import { UserInfo } from '@/common/interfaces/user.interfaces'
 import { AuthTokens } from '@/common/interfaces/auth.interface'
 import { ConfigService } from '@nestjs/config'
 import { separateDuration } from '@/common/utils/time.utils'
+import { Users } from '@prisma/client';
+import { UserService } from '@/apps/user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
   ) {
     this.configurationJwt = {
       secret: this.config.get('JWT_SECRET_KEY'),
@@ -30,7 +33,7 @@ export class AuthService {
       expiresIn: this.config.get('JWT_REFRESH_EXPIRED_DURATION'),
     }
   }
-
+  
   private async generateTokens(payload: UserInfo): Promise<[string, string]> {
     return Promise.all([
       this.jwtService.signAsync(payload, this.configurationJwt),
@@ -46,22 +49,12 @@ export class AuthService {
       h: "hours",
       d: "days",
     };
-
+    
     return moment().add(amount, unitMapping[unit]).toDate();
   }
   
-  async validateUser(email: string, pwd: string): Promise<UserInfo> {
+  async validateUser(user: Users): Promise<UserInfo> {
     try {
-      const user = await this.prisma.users.findFirst({
-        where: { email },
-      })
-      
-      // User does not exist
-      if (!user) throw new CustomException(
-        ERROR_MESSAGES.INVALID_CREDENTIALS,
-        HttpStatus.UNAUTHORIZED,
-      )
-      
       // Email has not been verified
       if (!user.emailVerifiedAt) throw new CustomException(
         ERROR_MESSAGES.EMAIL_NOT_VERIFIED,
@@ -80,16 +73,6 @@ export class AuthService {
         HttpStatus.FORBIDDEN,
       )
       
-      const passwordMatches = await bcrypt.compare(pwd, user.password)
-      
-      // Wrong password
-      if (!passwordMatches) {
-        throw new CustomException(
-          ERROR_MESSAGES.INVALID_CREDENTIALS,
-          HttpStatus.UNAUTHORIZED,
-        )
-      }
-      
       const { password, createdAt, createdBy, updatedBy, updatedAt, deletedBy, deletedAt, ...result } = user
       return result
     } catch (error) {
@@ -100,11 +83,19 @@ export class AuthService {
     }
   }
   
-  async getProfile(userID: string) {
+  async comparePassword(password: string, passwordHash: string): Promise<boolean> {
     try {
-      return this.prisma.users.findFirstOrThrow({
-        where: { id: userID },
-      })
+      const passwordMatches = await bcrypt.compare(password, passwordHash)
+      
+      // Wrong password
+      if (!passwordMatches) {
+        throw new CustomException(
+          ERROR_MESSAGES.INVALID_CREDENTIALS,
+          HttpStatus.UNAUTHORIZED,
+        )
+      }
+      
+      return true
     } catch (error) {
       throw new CustomException(
         error.message || "An unknown error occurred",
@@ -116,10 +107,10 @@ export class AuthService {
   async generateToken(payload: UserInfo): Promise<AuthTokens> {
     try {
       const [accessToken, refreshToken] = await this.generateTokens(payload);
-      
+  
       const expiresAccessAt = await this.calculateExpirationDate(this.config.get('JWT_EXPIRED_DURATION'));
       const expiresRefreshAt = await this.calculateExpirationDate(this.config.get('JWT_REFRESH_EXPIRED_DURATION'));
-      
+
       await this.prisma.sessionTokens.create({
         data: {
           createdBy: payload.id,
@@ -141,10 +132,39 @@ export class AuthService {
   
   async login(email: string, password: string): Promise<any> {
     try {
-      const user = await this.validateUser(email, password)
+      const user = await this.userService.getByEmail(email, password)
       const tokens = await this.generateToken(user)
       
       return { user, tokens }
+    } catch (error) {
+      throw new CustomException(
+        error.message || "An unknown error occurred",
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      )
+    }
+  }
+  
+  async refreshToken(user: UserInfo): Promise<any> {
+    try {
+      const tokens = await this.generateToken(user)
+      
+      return { user, tokens }
+    } catch (error) {
+      throw new CustomException(
+        error.message || "An unknown error occurred",
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      )
+    }
+  }
+  
+  async logout(token: string): Promise<any> {
+    try {
+      const tokens = await this.prisma.sessionTokens.update({
+        where: { accessToken: token },
+        data: { isRevoked: true }
+      })
+      
+      return tokens
     } catch (error) {
       throw new CustomException(
         error.message || "An unknown error occurred",
