@@ -1,19 +1,9 @@
 export const ERROR_MESSAGES = {
-  USERNAME_EXISTS: 'Username already exists',
   EMAIL_EXISTS: 'Email already exists',
-  INVALID_CREDENTIALS: 'Invalid username or password',
+  INVALID_CREDENTIALS: 'Invalid email or password',
+  EMAIL_NOT_VERIFIED: 'Email has not been verified',
+  USER_INACTIVE: 'Your account is currently inactive. Access is restricted',
+  USER_DELETED: 'This account has been deleted. Please contact support for assistance',
   UNAUTHORIZED: 'Unauthorized',
   FORBIDDEN_ACCESS: "You don't have access to this module!",
-}
-
-export const ERROR_CODES = {
-  USERNAME_EXISTS: 'USERNAME_EXISTS',
-  EMAIL_EXISTS: 'EMAIL_EXISTS',
-  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
-  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
-  VALIDATON_ERROR: 'VALIDATON_ERROR',
-  UNAUTHORIZED: 'UNAUTHORIZED',
-  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
-  DATA_NOT_FOUND: 'DATA_NOT_FOUND',
-  FORBIDDEN_ACCESS: 'FORBIDDEN_ACCESS',
 }

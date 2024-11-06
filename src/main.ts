@@ -1,30 +1,39 @@
 import { NestFactory } from '@nestjs/core'
-import { BadRequestException, ValidationPipe } from '@nestjs/common'
+import { HttpStatus, UnprocessableEntityException, ValidationPipe } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ValidationError } from 'class-validator'
 import { AppModule } from '@/app.module'
 import { CustomExceptionFilter } from '@/common/filters/custom-exception.filter'
-import { ERROR_CODES } from '@/common/constants/error-messages'
+import { config } from "dotenv"
+import { ConfigService } from '@nestjs/config'
+config()
 
 function validationExceptionFactory(validationErrors: ValidationError[] = []) {
   const errors = validationErrors.reduce((acc, error) => {
-    const field = error.property
-    const constraints = error.constraints
+    const field = error.property;
+    const constraints = error.constraints;
 
-    acc[field] = Object.values(constraints)
-    return acc
-  }, {})
+    acc[field] = Object.values(constraints);
+    return acc;
+  }, {});
 
-  return new BadRequestException({
-    statusCode: 400,
-    error: 'Bad Request',
+  return new UnprocessableEntityException({
+    code: HttpStatus.UNPROCESSABLE_ENTITY,
     message: errors,
-    errorCode: ERROR_CODES.VALIDATON_ERROR,
-  })
+  });
 }
 
 async function bootstrap() {
+  const configService = new ConfigService()
+
   const app = await NestFactory.create(AppModule)
+  
+  app.enableCors({
+    origin: true,
+    methods: 'GET,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -36,15 +45,15 @@ async function bootstrap() {
 
   app.useGlobalFilters(new CustomExceptionFilter())
 
-  const config = new DocumentBuilder()
+  const configSwagger = new DocumentBuilder()
     .setTitle('Boilerplate-v1 API')
     .setDescription('Boilerplate-v1 API description')
     .setVersion('1.0.0')
     .build()
 
-  const document = SwaggerModule.createDocument(app, config)
+  const document = SwaggerModule.createDocument(app, configSwagger)
   SwaggerModule.setup('api', app, document)
 
-  await app.listen(3000)
+  await app.listen(configService.get("APP_PORT"))
 }
 bootstrap()

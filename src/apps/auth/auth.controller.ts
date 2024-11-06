@@ -1,26 +1,20 @@
 import {
-  Controller,
-  UseGuards,
-  Request,
-  Get,
-  Post,
   Body,
+  Controller,
   HttpCode,
   HttpStatus,
-  Patch,
-  UsePipes,
-  ValidationPipe,
+  Post,
+  Req,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
-import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger'
-import { AuthLoginDto } from '@/apps/auth/dto/login.dto'
-import { RegisterDto } from '@/apps/auth/dto/register.dto'
-import { UpdateProfileDto } from '@/apps/auth/dto/update-profile.dto'
+import { ApiBody, ApiTags } from '@nestjs/swagger'
 import { AuthService } from '@/apps/auth/auth.service'
-import { JwtAuthGuard } from '@/apps/auth/guards/jwt-auth.guard'
-import { LocalAuthGuard } from '@/apps/auth/guards/local-auth.guard'
-import { LogActivity } from '@/common/decorators/log-activity.decorator'
 import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
+import { LoginDto } from '@/apps/auth/dto/login.dto'
+import { CustomRequest } from '@/common/interfaces/request.interface'
+import { JwtStrategy } from './strategies/jwt.strategy'
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -28,40 +22,17 @@ import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-  @UseGuards(LocalAuthGuard)
+  @ApiBody({ type: LoginDto })
   @HttpCode(HttpStatus.OK)
-  @ApiBody({ type: AuthLoginDto })
   @Post('login')
-  async login(@Body() input: AuthLoginDto, @Request() req) {
-    return this.authService.login(req.user)
+  async login(@Body() body: LoginDto) {
+    return this.authService.login(body.email, body.password)
   }
-
+  
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  getProfile(@Request() req) {
-    return req.user
-  }
-
-  @Post('register')
-  register(@Body() input: RegisterDto) {
-    return this.authService.register(input)
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @Patch('profile')
-  async updateProfile(
-    @Request() req,
-    @Body() updateProfileDto: UpdateProfileDto,
-  ) {
-    try {
-      const userId = req.user.id
-      await this.authService.updateProfile(userId, updateProfileDto)
-      return { message: 'Profile updated successfully' }
-    } catch (error) {
-      // Handle error and return appropriate response
-      throw new Error('Failed to update profile')
-    }
+  @Post('test')
+  async test() {
+    return
   }
 }

@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable } from "@nestjs/common"
 import { ethers, NonceManager, TransactionRequest } from "ethers"
 import { ConfigService } from "@nestjs/config"
-import { RecordLogInterface } from "@/libs/ethers/ethers.interface"
+import { RecordLogInterface } from "@/common/interfaces/ethers.interface"
 import { CustomException } from "@/common/exceptions/custom.exceptions"
 import generalUserLoggingABI from "@/libs/ethers/abi/GeneralLogging"
 import adminableABI from "@/libs/ethers/abi/Adminable"

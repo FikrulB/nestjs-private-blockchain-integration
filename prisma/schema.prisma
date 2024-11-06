@@ -12,51 +12,52 @@ datasource db {
 }
 
 model Users {
-  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  fullName         String           @map("full_name") @db.VarChar(255)
-  email            String           @unique @db.VarChar(100)
-  emailVerifiedAt  DateTime?        @map("email_verified_at")
-  password         String           @db.VarChar(60)
-  accountBcAddress String           @unique @map("account_bc_address") @db.Char(42)
-  status           Boolean          @default(true)
-  createdBy        String?          @map("created_by")
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedBy        String?          @map("updated_by")
-  updatedAt        DateTime?        @updatedAt @map("updated_at")
-  deletedBy        String?          @map("deleted_by")
-  deletedAt        DateTime?        @map("deleted_at")
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  fullName         String             @map("full_name") @db.VarChar(100)
+  email            String             @unique @db.VarChar(254)
+  emailVerifiedAt  DateTime?          @map("email_verified_at") @db.Timestamp()
+  password         String             @db.VarChar(60)
+  accountBcAddress String             @unique @map("account_bc_address") @db.Char(42)
+  role             Roles
+  status           Boolean            @default(true) @db.Boolean
+  createdBy        String?            @map("created_by") @db.Uuid
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamp()
+  updatedBy        String?            @map("updated_by") @db.Uuid
+  updatedAt        DateTime?          @updatedAt @map("updated_at") @db.Timestamp()
+  deletedBy        String?            @map("deleted_by") @db.Uuid
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamp()
   // Relations
   LogActivity      LogActivities[]
   LogManagements   LogManagements[]
-  UserRoleAccess   UserRoleAccess[]
+  UserRoleAccess   UserAccessClient[]
+  SessionTokens    SessionTokens[]
 
   @@map("users")
 }
 
-model UserRoleAccess {
+model UserAccessClient {
   id       String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   userID   String   @map("user_id") @db.Uuid
-  role     Roles
   clientID String?  @map("client_id") @db.Uuid
   // Relations
   User     Users    @relation(fields: [userID], references: [id])
   Client   Clients? @relation(fields: [clientID], references: [id])
 
-  @@map("user_role_access")
+  @@map("user_access_client")
 }
 
 model Clients {
-  id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name           String           @db.VarChar(255)
-  contactEmail   String           @map("contact_email") @db.VarChar(255)
-  contactPhone   String           @map("contact_phone") @db.VarChar(255)
-  createdBy      String           @map("created_by")
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedBy      String?          @map("updated_by")
-  updatedAt      DateTime?        @updatedAt @map("updated_at")
+  id             String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name           String             @db.VarChar(100)
+  contactEmail   String             @map("contact_email") @db.VarChar(254)
+  contactPhone   String             @map("contact_phone") @db.VarChar(20)
+  createdBy      String             @map("created_by") @db.Uuid
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamp()
+  updatedBy      String?            @map("updated_by") @db.Uuid
+  updatedAt      DateTime?          @updatedAt @map("updated_at") @db.Timestamp()
   // Relations
   ApiManagements ApiManagements[]
-  UserRoleAccess UserRoleAccess[]
+  UserRoleAccess UserAccessClient[]
 
   @@map("clients")
 }
@@ -65,14 +66,14 @@ model ApiManagements {
   id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   apiKey    String    @unique @map("api_key") @db.Char(64)
   clientID  String    @map("client_id") @db.Uuid
-  startAt   DateTime? @map("start_at")
-  endAt     DateTime? @map("end_at")
-  createdBy String?   @map("created_by")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedBy String?   @map("updated_by")
-  updatedAt DateTime? @updatedAt @map("updated_at")
-  deletedBy String?   @map("deleted_by")
-  deletedAt DateTime? @map("deleted_at")
+  startAt   DateTime? @map("start_at") @db.Timestamp()
+  endAt     DateTime? @map("end_at") @db.Timestamp()
+  createdBy String?   @map("created_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp()
+  updatedBy String?   @map("updated_by") @db.Uuid
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp()
+  deletedBy String?   @map("deleted_by") @db.Uuid
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp()
   // Relations
   Client    Clients   @relation(fields: [clientID], references: [id])
 
@@ -82,8 +83,8 @@ model ApiManagements {
 model LogActivities {
   id        String   @id @default(uuid()) @db.Uuid
   activity  String   @db.VarChar(100)
-  userAgent String?  @map("user_agent") @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at")
+  userAgent String?  @map("user_agent") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp()
   createdBy String   @map("created_by") @db.Uuid
   // Relations
   Users     Users    @relation(fields: [createdBy], references: [id])
@@ -95,18 +96,34 @@ model LogManagements {
   id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   activity         String   @db.VarChar(100)
   accountBcAddress String   @map("account_bc_address") @db.Char(42)
-  userEmail        String   @map("user_email") @db.VarChar
-  userAgent        String   @map("user_agent") @db.VarChar
-  userIP           String   @map("user_ip") @db.VarChar
-  data             Json     @map("data")
-  interactTo       String   @map("interact_to") @db.VarChar
-  txHash           String   @map("tx_hash") @db.VarChar
+  userEmail        String   @map("user_email") @db.VarChar(254)
+  userAgent        String   @map("user_agent") @db.VarChar(500)
+  userIP           String   @map("user_ip") @db.VarChar(40)
+  data             Json     @map("data") @db.Json
+  interactTo       String   @map("interact_to") @db.VarChar(42)
+  txHash           String   @map("tx_hash") @db.VarChar(70)
   createdBy        String   @map("created_by") @db.Uuid
-  createdAt        DateTime @default(now()) @map("created_at")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp()
   // Relations
   Users            Users    @relation(fields: [createdBy], references: [id])
 
   @@map("log_managements")
+}
+
+model SessionTokens {
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  accessToken      String    @unique @map("access_token") @db.VarChar(512)
+  expiresAccessAt  DateTime  @map("expires_access_at") @db.Timestamp()
+  refreshToken     String    @unique @map("refresh_token") @db.VarChar(512)
+  expiresRefreshAt DateTime  @map("expires_refresh_at") @db.Timestamp()
+  isRevoked        Boolean   @default(false) @map("is_revoked") @db.Boolean
+  createdBy        String    @map("created_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp()
+  updatedAt        DateTime? @updatedAt @map("updated_at") @db.Timestamp()
+  // Relations
+  User             Users     @relation(fields: [createdBy], references: [id])
+
+  @@map("session_tokens")
 }
 
 enum Roles {

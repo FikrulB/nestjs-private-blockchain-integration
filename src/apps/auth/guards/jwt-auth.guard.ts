@@ -1,18 +1,36 @@
-import { ERROR_CODES, ERROR_MESSAGES } from '@/common/constants/error-messages'
-import { CustomException } from '@/common/exceptions/custom.exceptions'
-import { HttpStatus, Injectable } from '@nestjs/common'
+import { ERROR_MESSAGES } from '@/common/constants/error-messages';
+import { CustomException } from '@/common/exceptions/custom.exceptions';
+import { PrismaService } from '@/libs/prisma/prisma.service';
+import { CanActivate, ExecutionContext, HttpStatus, Injectable } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import * as moment from 'moment';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
-  handleRequest(err, user) {
-    if (err || !user) {
-      throw new CustomException(
-        ERROR_MESSAGES.UNAUTHORIZED,
-        HttpStatus.UNAUTHORIZED,
-      )
-    }
+export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
+  constructor(
+    private readonly prismaService: PrismaService,
+  ) {super()}
 
-    return user
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest()
+    const authHeader = request.headers['authorization'];
+    
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) throw new CustomException(
+      ERROR_MESSAGES.UNAUTHORIZED,
+      HttpStatus.UNAUTHORIZED
+    )
+
+    const sessionToken = await this.prismaService.sessionTokens.findUnique({
+      where: { accessToken: token },
+    })
+
+    // token not found at database OR token is revoked OR expired token
+    if (!sessionToken || sessionToken.isRevoked || moment().isAfter(moment(sessionToken.expiresAccessAt))) throw new CustomException(
+      ERROR_MESSAGES.UNAUTHORIZED,
+      HttpStatus.UNAUTHORIZED
+    )
+    
+    return true
   }
 }

@@ -12,33 +12,17 @@ export const seedUsers = async (config: ConfigService) => {
   const user = await prisma.users.upsert({
     where: { email: "lynne@mail.me" },
     update: {
+      role: Roles.OWNER,
       accountBcAddress: config.get("BC_OWNER_ADDRESS")
     },
     create: {
       id: uuidV4(),
       fullName: "Lynne",
+      role: Roles.OWNER,
       email: "lynne@mail.me",
       emailVerifiedAt: new Date(),
       password: await hashPassword("password"),
       accountBcAddress: config.get("BC_OWNER_ADDRESS")
     }
   })
-
-  // Check user role
-  const existingRoleAccess = await prisma.userRoleAccess.findFirst({
-    where: {
-      userID: user.id,
-      role: Roles.OWNER
-    }
-  })
-  
-  if (!existingRoleAccess) {
-    // Create role access to user
-    await prisma.userRoleAccess.create({
-      data: {
-        userID: user.id,
-        role: Roles.OWNER
-      }
-    })
-  }
 }
